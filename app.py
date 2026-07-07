@@ -70,24 +70,32 @@ with col2:
         st.progress(result["degradation_index"] / 100)
         
         st.markdown("---")
+
+        # 핵심 정보(교체 시기, 남은 주행거리) 대형 강조 유지
+        st.subheader("📅 핵심 교체 시기 안내")
         
-        # 4-2. 주요 화학 수치 예측 결과 (3칸으로 분할 표시)
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            st.metric(label="🧪 산화도 (Oxidation)", value=f"{result['oxidation']} Abs/0.1mm")
-        with m2:
-            st.metric(label="📈 전산가 (TAN)", value=f"{result['tan']} mgKOH/g")
-        with m3:
-            st.metric(label="📉 전염기가 (TBN)", value=f"{result['tbn']} mgKOH/g")
+        st.markdown(f"### 📍 남은 주행 가능 거리: <span style='color:#00cc66; font-size:28px; font-weight:bold;'>약 {result['remaining_mileage']:,} km</span>", unsafe_allow_html=True)
+        
+        if isinstance(result["predicted_change_date"], datetime) or hasattr(result["predicted_change_date"], "strftime"):
+            predicted_date_str = result["predicted_change_date"].strftime('%Y년 %m월 %d일')
+            st.markdown(f"### 📅 예상 다음 교체 시점: <span style='color:#ff4b4b; font-size:28px; font-weight:bold;'>{predicted_date_str}</span> 전후", unsafe_allow_html=True)
+        else:
+            st.markdown(f"### 📅 예상 다음 교체 시점: <span style='color:#ff4b4b; font-size:28px; font-weight:bold;'>{result['predicted_change_date']}</span>", unsafe_allow_html=True)
             
         st.markdown("---")
         
-        # 4-3. 교체 시기 안내
-        st.write(f"➡️ **남은 주행 가능 거리:** 약 **{result['remaining_mileage']:,} km**")
-        if isinstance(result["predicted_change_date"], datetime) or hasattr(result["predicted_change_date"], "strftime"):
-            st.write(f"📅 **예상 다음 교체일:** **{result['predicted_change_date'].strftime('%Y년 %m월 %d일')}** 전후")
-        else:
-            st.write(f"📅 **예상 다음 교체일:** {result['predicted_change_date']}")
+        # ⭐ [수정 반영] HTML 테그를 사용하여 세부 화학 수치와 제목의 폰트 크기를 작게 축소
+        st.subheader("🧪 세부 화학적 성질 변동 예측")
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.markdown(f"<p style='font-size:14px; color:gray; margin-bottom:2px;'>산화도 (Oxidation)</p><p style='font-size:20px; font-weight:bold; margin-top:0px;'>{result['oxidation']} Abs</p>", unsafe_allow_html=True)
+            st.caption("💡 **산화도**: 오일이 고온 스트레스와 산소로 인해 변질된 지표 (높을수록 불리)")
+        with m2:
+            st.markdown(f"<p style='font-size:14px; color:gray; margin-bottom:2px;'>전산가 (TAN)</p><p style='font-size:20px; font-weight:bold; margin-top:0px;'>{result['tan']} mgKOH</p>", unsafe_allow_html=True)
+            st.caption("💡 **전산가(TAN)**: 내부 산성 물질의 양. 수명이 갈수록 점차 상승 (높을수록 불리)")
+        with m3:
+            st.markdown(f"<p style='font-size:14px; color:gray; margin-bottom:2px;'>전염기가 (TBN)</p><p style='font-size:20px; font-weight:bold; margin-top:0px;'>{result['tbn']} mgKOH</p>", unsafe_allow_html=True)
+            st.caption("💡 **전염기가(TBN)**: 산성 물질을 중화하는 엔진 보호 첨가제 잔여량 (낮을수록 위험)")
             
         st.markdown("---")
         
@@ -96,28 +104,23 @@ with col2:
         
         trends = result["trends"]
         
-        # 그래프 객체 생성
         fig = gr.Figure()
         
-        # 산화도선 그래프 추가
         fig.add_trace(gr.Scatter(
             x=trends["mileage"], y=trends["oxidation"],
             mode='lines+markers', name='산화도 (Oxidation)', line=dict(color='orange', width=2)
         ))
         
-        # TAN선 그래프 추가
         fig.add_trace(gr.Scatter(
             x=trends["mileage"], y=trends["tan"],
             mode='lines+markers', name='전산가 (TAN)', line=dict(color='red', width=2)
         ))
         
-        # TBN선 그래프 추가
         fig.add_trace(gr.Scatter(
             x=trends["mileage"], y=trends["tbn"],
             mode='lines+markers', name='전염기가 (TBN)', line=dict(color='blue', width=2)
         ))
         
-        # 현재 주행거리에 세로 점선 표시하여 시각적 효과 극대화
         fig.add_vline(x=current_mileage, line_width=2, line_dash="dash", line_color="green")
         fig.add_annotation(x=current_mileage, y=max(trends["oxidation"]), text="현재 주행 시점", showarrow=True, arrowhead=1)
 
@@ -128,7 +131,6 @@ with col2:
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         
-        # 스트리밋 화면에 그래프 띄우기
         st.plotly_chart(fig, use_container_width=True)
         
     else:
