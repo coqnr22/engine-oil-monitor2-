@@ -25,7 +25,7 @@ with col1:
     with st.form("input_form"):
         oil_type = st.selectbox(
             "🛢️ 윤활유 종류 (점도 규격)",
-            ["0W-20", "5W-30", "5W-40"]
+            ["0W-20(하이브리드/연비형)", "5W-30(일반 가솔린/디젤 세단)", "5W-40(고성능/대형 디젤 SUV)"]
         )
         
         current_mileage = st.number_input(
